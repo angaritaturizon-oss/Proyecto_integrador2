@@ -1,0 +1,7 @@
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    bio TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
