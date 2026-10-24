@@ -33,10 +33,43 @@ app.get('/authors', (req, res) => {
     res.json(authors);
 });
 
+function isValidId(id) {
+    return Number.isSafeInteger(id) && id > 0;
+}
+
+function validateAuthor(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return 'Debes enviar un objeto JSON con los datos del autor';
+    }
+
+    const { name, email, bio } = data;
+
+    if (typeof name !== 'string' || name.trim() === '') {
+        return 'El nombre es obligatorio y debe ser texto';
+    }
+
+    if (typeof email !== 'string' || email.trim() === '') {
+        return 'El email es obligatorio y debe ser texto';
+    }
+
+    if (bio !== undefined && typeof bio !== 'string') {
+        return 'La biografía debe ser texto';
+    }
+
+    return null;
+}
+
+function emailExists(email, excludedId = null) {
+    return authors.some((author) =>
+        author.email.toLowerCase() === email &&
+        author.id !== excludedId
+    );
+}
+
 app.get('/authors/:id', (req, res) => {
     const id = Number(req.params.id);
 
-    if (!Number.isSafeInteger(id) || id <= 0) {
+    if (!isValidId(id)) {
     return res.status(400).json({
         message: 'El ID debe ser un número entero positivo'
     });
@@ -54,38 +87,23 @@ app.get('/authors/:id', (req, res) => {
 });
 
 app.post('/authors', (req, res) => {
+    const validationError = validateAuthor(req.body);
+
+    if (validationError) {
+        return res.status(400).json({
+            message: validationError
+        });
+    }
+
     const { name, email, bio } = req.body;
-
-    if (typeof name !== 'string' || name.trim() === '') {
-        return res.status(400).json({
-            message: 'El nombre es obligatorio y debe ser texto'
-        });
-    }
-
-    if (typeof email !== 'string' || email.trim() === '') {
-        return res.status(400).json({
-            message: 'El email es obligatorio y debe ser texto'
-        });
-    }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const existingAuthor = authors.find(
-        (author) => author.email.toLowerCase() === normalizedEmail
-    );
-
-    if (existingAuthor) {
-        return res.status(409).json({
-            message: 'Ya existe un autor con ese email'
-        });
-    }
-
-    if (bio !== undefined && typeof bio !== 'string') {
-        return res.status(400).json({
-            message: 'La biografía debe ser texto'
-        });
-    }
-
+    if (emailExists(normalizedEmail)) {
+    return res.status(409).json({
+        message: 'Ya existe un autor con ese email'
+    });
+}
     const newAuthor = {
         id: Math.max(0, ...authors.map((author) => author.id)) + 1,
         name: name.trim(),
@@ -96,6 +114,71 @@ app.post('/authors', (req, res) => {
     authors.push(newAuthor);
 
     return res.status(201).json(newAuthor);
+});
+
+app.put('/authors/:id', (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!isValidId(id)) {
+        return res.status(400).json({
+            message: 'El ID debe ser un número entero positivo'
+        });
+    }
+
+    const author = authors.find((author) => author.id === id);
+
+    if (!author) {
+        return res.status(404).json({
+            message: 'Autor no encontrado'
+        });
+    }
+
+    const validationError = validateAuthor(req.body);
+
+    if (validationError) {
+        return res.status(400).json({
+            message: validationError
+        });
+    }
+
+    const { name, email, bio } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (emailExists(normalizedEmail, id)) {
+        return res.status(409).json({
+            message: 'Ya existe un autor con ese email'
+        });
+    }
+
+    author.name = name.trim();
+    author.email = normalizedEmail;
+    author.bio = bio === undefined ? null : bio.trim();
+
+    return res.json(author);
+});
+
+app.delete('/authors/:id', (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!isValidId(id)) {
+        return res.status(400).json({
+            message: 'El ID debe ser un número entero positivo'
+        });
+    }
+
+    const authorIndex = authors.findIndex(
+        (author) => author.id === id
+    );
+
+    if (authorIndex === -1) {
+        return res.status(404).json({
+            message: 'Autor no encontrado'
+        });
+    }
+
+    authors.splice(authorIndex, 1);
+
+    return res.status(204).send();
 });
 
 app.listen(3000, () => {
