@@ -8,7 +8,8 @@ const {
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+// Listar publicaciones
+router.get('/', async (req, res, next) => {
     try {
         const result = await pool.query(
             `SELECT id, title, content, author_id, published, created_at
@@ -18,15 +19,12 @@ router.get('/', async (req, res) => {
 
         return res.json(result.rows);
     } catch (error) {
-        console.error('Error al consultar publicaciones:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al consultar las publicaciones'
-        });
+        return next(error);
     }
 });
 
-router.get('/:id', async (req, res) => {
+// Consultar una publicación por ID
+router.get('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -51,15 +49,12 @@ router.get('/:id', async (req, res) => {
 
         return res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error al consultar publicación:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al consultar la publicación'
-        });
+        return next(error);
     }
 });
 
-router.post('/', async (req, res) => {
+// Crear una publicación
+router.post('/', async (req, res, next) => {
     const validationError = validatePost(req.body);
 
     if (validationError) {
@@ -85,21 +80,12 @@ router.post('/', async (req, res) => {
 
         return res.status(201).json(result.rows[0]);
     } catch (error) {
-        if (error.code === '23503') {
-            return res.status(404).json({
-                message: 'Autor no encontrado'
-            });
-        }
-
-        console.error('Error al crear publicación:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al crear la publicación'
-        });
+        return next(error);
     }
 });
 
-router.put('/:id', async (req, res) => {
+// Actualizar una publicación
+router.put('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -141,21 +127,12 @@ router.put('/:id', async (req, res) => {
 
         return res.json(result.rows[0]);
     } catch (error) {
-        if (error.code === '23503') {
-            return res.status(404).json({
-                message: 'Autor no encontrado'
-            });
-        }
-
-        console.error('Error al actualizar publicación:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al actualizar la publicación'
-        });
+        return next(error);
     }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar una publicación
+router.delete('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -178,13 +155,8 @@ router.delete('/:id', async (req, res) => {
 
         return res.status(204).send();
     } catch (error) {
-        console.error('Error al eliminar publicación:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al eliminar la publicación'
-        });
+        return next(error);
     }
 });
 
 module.exports = router;
-

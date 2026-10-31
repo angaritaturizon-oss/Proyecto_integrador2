@@ -8,7 +8,8 @@ const {
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+// Listar autores
+router.get('/', async (req, res, next) => {
     try {
         const result = await pool.query(
             'SELECT id, name, email, bio, created_at FROM authors ORDER BY id'
@@ -16,15 +17,12 @@ router.get('/', async (req, res) => {
 
         return res.json(result.rows);
     } catch (error) {
-        console.error('Error al consultar autores:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al consultar los autores'
-        });
+        return next(error);
     }
 });
 
-router.get('/:id', async (req, res) => {
+// Consultar un autor por ID
+router.get('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -47,15 +45,12 @@ router.get('/:id', async (req, res) => {
 
         return res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error al consultar autor:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al consultar el autor'
-        });
+        return next(error);
     }
 });
 
-router.post('/', async (req, res) => {
+// Crear un autor
+router.post('/', async (req, res, next) => {
     const validationError = validateAuthor(req.body);
 
     if (validationError) {
@@ -81,21 +76,12 @@ router.post('/', async (req, res) => {
 
         return res.status(201).json(result.rows[0]);
     } catch (error) {
-        if (error.code === '23505') {
-            return res.status(409).json({
-                message: 'Ya existe un autor con ese email'
-            });
-        }
-
-        console.error('Error al crear autor:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al crear el autor'
-        });
+        return next(error);
     }
 });
 
-router.put('/:id', async (req, res) => {
+// Actualizar un autor
+router.put('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -137,21 +123,12 @@ router.put('/:id', async (req, res) => {
 
         return res.json(result.rows[0]);
     } catch (error) {
-        if (error.code === '23505') {
-            return res.status(409).json({
-                message: 'Ya existe un autor con ese email'
-            });
-        }
-
-        console.error('Error al actualizar autor:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al actualizar el autor'
-        });
+        return next(error);
     }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar un autor
+router.delete('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -174,11 +151,7 @@ router.delete('/:id', async (req, res) => {
 
         return res.status(204).send();
     } catch (error) {
-        console.error('Error al eliminar autor:', error.message);
-
-        return res.status(500).json({
-            message: 'Error al eliminar el autor'
-        });
+        return next(error);
     }
 });
 
