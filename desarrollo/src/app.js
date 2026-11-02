@@ -11,11 +11,11 @@ app.use('/authors', authorsRoutes);
 app.use('/posts', postsRoutes);
 
 app.get('/', (req, res) => {
-    res.json({ message: 'API del Proyecto Integrador funcionando' });
+    res.json({
+        message: 'API del Proyecto Integrador funcionando'
+    });
 });
 
 app.use(errorHandler);
 
-app.listen(3000, () => {
-    console.log('Servidor disponible en http://localhost:3000');
-});
+module.exports = app;

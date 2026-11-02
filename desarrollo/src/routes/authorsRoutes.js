@@ -1,5 +1,5 @@
 const express = require('express');
-const pool = require('../db/pool');
+const authorsService = require('../services/authorsService');
 
 const {
     isValidId,
@@ -11,17 +11,15 @@ const router = express.Router();
 // Listar autores
 router.get('/', async (req, res, next) => {
     try {
-        const result = await pool.query(
-            'SELECT id, name, email, bio, created_at FROM authors ORDER BY id'
-        );
+        const authors = await authorsService.getAllAuthors();
 
-        return res.json(result.rows);
+        return res.json(authors);
     } catch (error) {
         return next(error);
     }
 });
 
-// Consultar un autor por ID
+// Consultar un autor
 router.get('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
 
@@ -32,18 +30,15 @@ router.get('/:id', async (req, res, next) => {
     }
 
     try {
-        const result = await pool.query(
-            'SELECT id, name, email, bio, created_at FROM authors WHERE id = $1',
-            [id]
-        );
+        const author = await authorsService.getAuthorById(id);
 
-        if (result.rows.length === 0) {
+        if (!author) {
             return res.status(404).json({
                 message: 'Autor no encontrado'
             });
         }
 
-        return res.json(result.rows[0]);
+        return res.json(author);
     } catch (error) {
         return next(error);
     }
@@ -59,22 +54,10 @@ router.post('/', async (req, res, next) => {
         });
     }
 
-    const { name, email, bio } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
-
     try {
-        const result = await pool.query(
-            `INSERT INTO authors (name, email, bio)
-             VALUES ($1, $2, $3)
-             RETURNING id, name, email, bio, created_at`,
-            [
-                name.trim(),
-                normalizedEmail,
-                bio === undefined ? null : bio.trim()
-            ]
-        );
+        const author = await authorsService.createAuthor(req.body);
 
-        return res.status(201).json(result.rows[0]);
+        return res.status(201).json(author);
     } catch (error) {
         return next(error);
     }
@@ -98,30 +81,16 @@ router.put('/:id', async (req, res, next) => {
         });
     }
 
-    const { name, email, bio } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
-
     try {
-        const result = await pool.query(
-            `UPDATE authors
-             SET name = $1, email = $2, bio = $3
-             WHERE id = $4
-             RETURNING id, name, email, bio, created_at`,
-            [
-                name.trim(),
-                normalizedEmail,
-                bio === undefined ? null : bio.trim(),
-                id
-            ]
-        );
+        const author = await authorsService.updateAuthor(id, req.body);
 
-        if (result.rows.length === 0) {
+        if (!author) {
             return res.status(404).json({
                 message: 'Autor no encontrado'
             });
         }
 
-        return res.json(result.rows[0]);
+        return res.json(author);
     } catch (error) {
         return next(error);
     }
@@ -138,12 +107,9 @@ router.delete('/:id', async (req, res, next) => {
     }
 
     try {
-        const result = await pool.query(
-            'DELETE FROM authors WHERE id = $1 RETURNING id',
-            [id]
-        );
+        const author = await authorsService.deleteAuthor(id);
 
-        if (result.rows.length === 0) {
+        if (!author) {
             return res.status(404).json({
                 message: 'Autor no encontrado'
             });
