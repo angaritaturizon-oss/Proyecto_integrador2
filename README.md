@@ -216,3 +216,49 @@ Después de cada prueba se eliminan los registros creados por ella.
 - `desarrollo/src/middlewares/`: manejo global de errores.
 - `desarrollo/tests/`: tests automatizados.
 - `desarrollo/sql/`: creación de tablas y datos iniciales.
+
+## Documentación de la API (OpenAPI)
+
+La especificación está en [`documentacion/openapi.yaml`](documentacion/openapi.yaml). Describe las rutas de autores y publicaciones, los datos que reciben y sus posibles respuestas.
+
+Para visualizarla:
+
+1. Abre [Swagger Editor](https://editor.swagger.io/).
+2. Copia el contenido de `documentacion/openapi.yaml` y pégalo en el panel del editor.
+3. En la vista previa, expande una operación, por ejemplo `GET /authors`, para ver sus parámetros y respuestas.
+
+No necesitas iniciar la API para leer la documentación. Si quieres comprobar una respuesta real, inicia la API con `npm start` desde `desarrollo` y envía la solicitud desde Postman a `http://localhost:3000`.
+
+## Despliegue en Railway
+
+1. Crea un proyecto en Railway con dos servicios: la **API**, conectada al repositorio de GitHub, y una base de datos **PostgreSQL**.
+2. En la configuración del servicio de la API, establece **Root Directory** en `/desarrollo` y **Start Command** en `npm start`.
+3. En **Variables** del servicio de la API, configura las siguientes referencias. El ejemplo supone que el servicio de base de datos se llama `Postgres`; si tiene otro nombre, usa ese nombre en las referencias.
+
+   | Variable de la API | Valor en Railway |
+   |---|---|
+   | `DB_HOST` | `${{Postgres.PGHOST}}` |
+   | `DB_PORT` | `${{Postgres.PGPORT}}` |
+   | `DB_USER` | `${{Postgres.PGUSER}}` |
+   | `DB_PASSWORD` | `${{Postgres.PGPASSWORD}}` |
+   | `DB_NAME` | `${{Postgres.PGDATABASE}}` |
+
+   El servidor lee `PORT` del entorno. Las credenciales se configuran en Railway y se mantienen fuera del repositorio.
+
+4. En la **base de Railway**, ejecuta `desarrollo/sql/setup.sql` una sola vez para crear las tablas. Si quieres cargar datos de ejemplo, ejecuta después `desarrollo/sql/seed.sql`. Si te conectas desde tu computadora con un cliente PostgreSQL, usa los datos de conexión externa que indique Railway; el host interno se usa entre servicios del proyecto.
+5. En **Networking** del servicio de la API, genera un dominio público. Abre `https://TU-DOMINIO.up.railway.app/` para comprobar que el servidor responde y `/authors` para comprobar que también puede consultar PostgreSQL.
+
+**URL interna de PostgreSQL:** `${{Postgres.DATABASE_URL}}`. Es una referencia privada y puede incluir credenciales. El código de este proyecto usa las cinco variables `DB_*` de la tabla para conectarse a la misma base.
+
+**URL pública de la API:** pendiente de despliegue. Una vez generado el dominio, reemplaza esta línea con la URL real de Railway.
+
+## Registro del uso de IA
+
+Utilicé ChatGPT para entender cómo se conectan las partes de la API y como referencia para algunos cambios de código. Al integrar esos cambios, probé los endpoints en mi entorno para comprobar que respondieran como esperaba.
+
+- «hazme primero un resumen muy pequeno de como conectamos crud a postg, algo que me sirva en un futuro para entender»: esta consulta me ayudó a repasar cómo una solicitud pasa de Express a una consulta parametrizada en PostgreSQL y vuelve como respuesta JSON.
+- «dame todo el codigo que debe tener authorsRoutes y errorHandler»: utilicé el ejemplo para integrar el middleware de errores y comprobé con Postman que la API devuelve `409` cuando intento registrar un correo duplicado.
+
+- «no aparece en get, pero ya esta creado en post»: esta consulta me ayudó a detectar que tenía dos rutas `POST /authors` y que la primera guardaba los datos en memoria. Después de corregirlo, verifiqué que el autor aparecía al consultarlo desde PostgreSQL.
+
+

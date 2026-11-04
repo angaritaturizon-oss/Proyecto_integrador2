@@ -1,0 +1,330 @@
+openapi: 3.0.3
+info:
+  title: Proyecto Integrador 2 — API REST
+  version: '1.0.0'
+  description: API de autores y publicaciones con Express y PostgreSQL.
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+
+paths:
+  /authors:
+    get:
+      tags: [Autores]
+      summary: Listar autores
+      responses:
+        '200':
+          description: Lista de autores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Author'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Autores]
+      summary: Crear un autor
+      requestBody:
+        $ref: '#/components/requestBodies/AuthorBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/AuthorResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/DuplicateEmail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /authors/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Autores]
+      summary: Consultar un autor
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthorResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AuthorNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Autores]
+      summary: Actualizar un autor
+      description: Si se omite la biografía, queda en null.
+      requestBody:
+        $ref: '#/components/requestBodies/AuthorBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthorResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AuthorNotFound'
+        '409':
+          $ref: '#/components/responses/DuplicateEmail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Autores]
+      summary: Eliminar un autor
+      description: PostgreSQL elimina también las publicaciones asociadas.
+      responses:
+        '204':
+          description: Autor eliminado. La respuesta no tiene cuerpo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AuthorNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts:
+    get:
+      tags: [Publicaciones]
+      summary: Listar publicaciones
+      responses:
+        '200':
+          description: Lista de publicaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Publicaciones]
+      summary: Crear una publicación
+      requestBody:
+        $ref: '#/components/requestBodies/PostBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/PostResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/AuthorNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Publicaciones]
+      summary: Consultar una publicación
+      responses:
+        '200':
+          $ref: '#/components/responses/PostResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Publicaciones]
+      summary: Actualizar una publicación
+      description: Si se omite published, queda en false.
+      requestBody:
+        $ref: '#/components/requestBodies/PostBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/PostResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No existe la publicación o el autor indicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                publicacion:
+                  value: { message: 'Publicación no encontrada' }
+                autor:
+                  value: { message: 'Autor no encontrado' }
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Publicaciones]
+      summary: Eliminar una publicación
+      responses:
+        '204':
+          description: Publicación eliminada. La respuesta no tiene cuerpo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Identificador del recurso
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  requestBodies:
+    AuthorBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthorInput'
+          example:
+            name: Laura
+            email: laura@example.com
+            bio: Autora de ejemplo
+    PostBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PostInput'
+          example:
+            title: Mi publicación
+            content: Contenido de ejemplo.
+            author_id: 1
+            published: false
+
+  schemas:
+    AuthorInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          minLength: 1
+          maxLength: 150
+          description: Se guarda sin espacios externos y en minúsculas.
+        bio:
+          type: string
+
+    Author:
+      type: object
+      required: [id, name, email, bio, created_at]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    PostInput:
+      type: object
+      required: [title, content, author_id]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        content:
+          type: string
+          minLength: 1
+        author_id:
+          type: integer
+          minimum: 1
+          description: Debe corresponder a un autor existente.
+        published:
+          type: boolean
+          default: false
+
+    Post:
+      type: object
+      required: [id, title, content, author_id, published, created_at]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        author_id:
+          type: integer
+        published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+  responses:
+    AuthorResult:
+      description: Datos del autor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Author'
+    PostResult:
+      description: Datos de la publicación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Post'
+    BadRequest:
+      description: ID inválido o datos de entrada inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    AuthorNotFound:
+      description: Autor no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Autor no encontrado
+    PostNotFound:
+      description: Publicación no encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Publicación no encontrada
+    DuplicateEmail:
+      description: Email duplicado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Ya existe un autor con ese email
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
