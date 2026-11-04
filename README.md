@@ -245,12 +245,12 @@ No necesitas iniciar la API para leer la documentación. Si quieres comprobar un
 
    El servidor lee `PORT` del entorno. Las credenciales se configuran en Railway y se mantienen fuera del repositorio.
 
-4. En la **base de Railway**, ejecuta `desarrollo/sql/setup.sql` una sola vez para crear las tablas. Si quieres cargar datos de ejemplo, ejecuta después `desarrollo/sql/seed.sql`. Si te conectas desde tu computadora con un cliente PostgreSQL, usa los datos de conexión externa que indique Railway; el host interno se usa entre servicios del proyecto.
-5. En **Networking** del servicio de la API, genera un dominio público. Abre `https://TU-DOMINIO.up.railway.app/` para comprobar que el servidor responde y `/authors` para comprobar que también puede consultar PostgreSQL.
+4. En la **base de Railway**, ejecuta `desarrollo/sql/setup.sql` una sola vez para crear las tablas. Para cargar los datos de ejemplo, ejecuta después `desarrollo/sql/seed.sql`. Desde tu computador, puedes conectarte a PostgreSQL mediante el túnel `railway connect Postgres --tunnel-only`. La API usa el host interno de Railway para conectarse a la base.
+5. En **Networking** del servicio de la API, genera un dominio público. Para comprobar que la API consulta PostgreSQL, abre [`/authors`](https://proyectointegrador2-production-8b57.up.railway.app/authors) y [`/posts`](https://proyectointegrador2-production-8b57.up.railway.app/posts).
 
 **URL interna de PostgreSQL:** `${{Postgres.DATABASE_URL}}`. Es una referencia privada y puede incluir credenciales. El código de este proyecto usa las cinco variables `DB_*` de la tabla para conectarse a la misma base.
 
-**URL pública de la API:** pendiente de despliegue. Una vez generado el dominio, reemplaza esta línea con la URL real de Railway.
+**URL pública de la API:** [https://proyectointegrador2-production-8b57.up.railway.app](https://proyectointegrador2-production-8b57.up.railway.app)
 
 ## Registro del uso de IA
 

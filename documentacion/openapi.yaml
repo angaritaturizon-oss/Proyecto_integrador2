@@ -6,6 +6,8 @@ info:
 servers:
   - url: http://localhost:3000
     description: Servidor local
+  - url: https://proyectointegrador2-production-8b57.up.railway.app
+    description: Servidor público en Railway
 
 paths:
   /authors:
